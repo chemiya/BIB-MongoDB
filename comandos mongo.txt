@@ -654,3 +654,1473 @@ db.usuario.aggregate([
   }
 ])
 //suma importes compras por tipo
+
+
+use baseCurso
+
+db.personas.insertMany([
+    { nombre: "Juan", edad: 30, ciudad: "Madrid" },
+    { nombre: "Ana", edad: 25, ciudad: "Barcelona" },
+    { nombre: "Pedro", edad: 35, ciudad: "Valencia" }
+])
+
+
+db.personas.find().pretty() // imprimir más bonito
+
+db.personas.find().toArray() // como array
+
+db.personas.find().forEach(doc => printjson(doc)) // uno a uno
+
+db.stats() //datos de la base
+
+db.personas.stats() //datos de la colección
+
+db.personas.updateMany(
+    {},  
+    {
+        $set: {
+            deportesFavoritos: ["fútbol", "baloncesto", "tenis"]
+        }
+    }
+)
+// todos se les ponen estos deportes
+
+
+// eliminar uno
+db.personas.updateOne(
+    { nombre: "Pedro" },
+    { $pull: { deportesFavoritos: "baloncesto" } }
+)
+
+// añadir uno
+db.personas.updateOne(
+    { nombre: "Pedro" },
+    { $push: { deportesFavoritos: "balonmano" } }
+)
+
+// ver resultado
+db.personas.find({ nombre: "Pedro" }).pretty()
+
+// atributo anidado
+db.personas.updateOne(
+    { nombre: "Pedro" },
+    {
+        $set: {
+            "detalles.personales.contacto.telefono": "123-456-7890"
+        }
+    }
+)
+
+
+// ver ese atributo
+db.personas.find(
+    { nombre: "Pedro" },
+    { "detalles.personales.contacto.telefono": 1, _id: 0 }
+).pretty()
+
+
+db.perfiles.insertMany([
+    { usuarioId: ObjectId(), bio: "Bio de Juan", redes: ["twitter.com/juan", "linkedin.com/in/juan"] },
+    { usuarioId: ObjectId(), bio: "Bio de Ana", redes: ["twitter.com/ana", "linkedin.com/in/ana"] },
+    { usuarioId: ObjectId(), bio: "Bio de Pedro", redes: ["twitter.com/pedro", "linkedin.com/in/pedro"] }
+])
+
+
+// obtener personas y perfiles
+let personas = db.personas.find().toArray();
+let perfiles = db.perfiles.find().toArray();
+
+
+// en los perfiles se pone el id del usuario, relación 1 a 1 
+personas.forEach((usuario, index) => {
+    db.perfiles.updateOne(
+        { _id: perfiles[index]._id },
+        { $set: { usuarioId: usuario._id } }
+    );
+});
+
+
+// relaciones uno a muchos utilizando el nombre
+db.posts.insertMany([
+    { usuarioNombre: "Juan", titulo: "Post 1 de Juan", contenido: "Contenido del post 1 de Juan" },
+    { usuarioNombre: "Juan", titulo: "Post 2 de Juan", contenido: "Contenido del post 2 de Juan" },
+    { usuarioNombre: "Ana", titulo: "Post 1 de Ana", contenido: "Contenido del post 1 de Ana" },
+    { usuarioNombre: "Pedro", titulo: "Post 1 de Pedro", contenido: "Contenido del post 1 de Pedro" },
+    { usuarioNombre: "Pedro", titulo: "Post 2 de Pedro", contenido: "Contenido del post 2 de Pedro" }
+])
+
+
+
+db.proyectos.insertMany([
+    { nombre: "Proyecto 1", descripcion: "Descripción del proyecto 1" },
+    { nombre: "Proyecto 2", descripcion: "Descripción del proyecto 2" }
+])
+
+// obtener ids
+let usuarioIds = db.personas.find().toArray().map(user => user._id);
+usuarioIds
+let proyectoIds = db.proyectos.find().toArray().map(proj => proj._id);
+
+// asociar personas a proyectos con relación muchos a muchos
+db.personas.updateMany(
+    { nombre: "Juan" },
+    { $set: { proyectos: [proyectoIds[0], proyectoIds[1]] } }
+);
+
+db.personas.updateMany(
+    { nombre: "Ana" },
+    { $set: { proyectos: [proyectoIds[0]] } }
+);
+
+db.personas.updateMany(
+    { nombre: "Pedro" },
+    { $set: { proyectos: [proyectoIds[1]] } }
+);
+
+db.personas.updateMany(
+    { _id: proyectoIds[0] },
+    { $set: { usuarios: [usuarioIds[0], usuarioIds[1]] } }
+);
+
+db.personas.updateMany(
+    { _id: proyectoIds[1] },
+    { $set: { usuarios: [usuarioIds[0], usuarioIds[2]] } }
+);
+
+
+// consulta relación uno a uno
+db.perfiles.find({ usuarioId: db.personas.findOne({ nombre: "Pedro" })._id }).pretty()
+
+// consulta relación uno a muchos
+db.posts.find({ usuarioNombre: "Juan" }).pretty()
+
+
+// consulta relación muchos a muchos
+db.personas.find({ nombre: "Juan" }, { proyectos: 1, _id: 0 }).pretty()
+
+// lookup une los campos por la clave
+db.personas.aggregate([
+    {
+        $lookup: {
+            from: "perfiles",
+            localField: "_id",
+            foreignField: "usuarioId",
+            as: "perfil"
+        }
+    },
+    {
+        $unwind: "$perfil"
+    }
+]).pretty()
+
+
+// unir elementos en relación uno a muchos
+db.personas.aggregate([
+    {
+        $lookup: {
+            from: "posts",
+            localField: "nombre",
+            foreignField: "usuarioNombre",
+            as: "posts"
+        }
+    }
+]).pretty()
+
+
+// unirlo en relación muchos a muchos
+db.personas.aggregate([
+    {
+        $lookup: {
+            from: "proyectos",
+            localField: "proyectos",
+            foreignField: "_id",
+            as: "proyectosDetalles"
+        }
+    }
+]).pretty()
+
+
+// establecer validaciones
+db.createCollection("usuarios", {
+    validator: {
+        $jsonSchema: {
+            bsonType: "object",
+            required: ["nombre", "edad", "ciudad"],
+            properties: {
+                nombre: {
+                    bsonType: "string",
+                    description: "debe ser una cadena de texto y es obligatorio"
+                },
+                edad: {
+                    bsonType: "int",
+                    minimum: 0,
+                    maximum: 120,
+                    description: "debe ser un entero en el rango [0, 120] y es obligatorio"
+                },
+                ciudad: {
+                    bsonType: "string",
+                    description: "debe ser una cadena de texto y es obligatorio"
+                },
+                correo: {
+                    bsonType: "string",
+                    pattern: "^.+@.+$",
+                    description: "debe ser una cadena de texto y coincidir con el patrón de correo electrónico"
+                }
+            }
+        }
+    }
+})
+
+
+// error en la validación
+db.usuarios.insertMany([
+    { _id: ObjectId("64a7b2d5c2e1a4b5c3e1a4b5"), nombre: "Juan", edad: 30, ciudad: "Madrid", correo:"sdaa" },
+    { _id: ObjectId("64a7b2d5c2e1a4b5c3e1a4b6"), nombre: "Ana", edad: 25, ciudad: "Barcelona" },
+    { _id: ObjectId("64a7b2d5c2e1a4b5c3e1a4b7"), nombre: "Pedro", edad: 35, ciudad: "Valencia" }
+])
+
+
+
+// editar validación, correo tambien required
+db.runCommand({
+    collMod: "usuarios",
+    validator: {
+        $jsonSchema: {
+            bsonType: "object",
+            required: ["nombre", "edad", "ciudad", "correo"],
+            properties: {
+                nombre: {
+                    bsonType: "string",
+                    description: "debe ser una cadena de texto y es obligatorio"
+                },
+                edad: {
+                    bsonType: "int",
+                    minimum: 0,
+                    maximum: 120,
+                    description: "debe ser un entero en el rango [0, 120] y es obligatorio"
+                },
+                ciudad: {
+                    bsonType: "string",
+                    description: "debe ser una cadena de texto y es obligatorio"
+                },
+                correo: {
+                    bsonType: "string",
+                    pattern: "^.+@.+$",
+                    description: "debe ser una cadena de texto y coincidir con el patrón de correo electrónico y es obligatorio"
+                }
+            }
+        }
+    },
+    validationLevel: "strict"  
+})
+
+// error en la validación
+db.usuarios.insertMany([
+    { _id: ObjectId("64a7b2d5c2e1a4b5c3e1a4b5"), nombre: "Juan", edad: 30, ciudad: "Madrid" },
+    { _id: ObjectId("64a7b2d5c2e1a4b5c3e1a4b6"), nombre: "Ana", edad: 25, ciudad: "Barcelona" },
+    { _id: ObjectId("64a7b2d5c2e1a4b5c3e1a4b7"), nombre: "Pedro", edad: 35, ciudad: "Valencia" }
+])
+
+// comandos administrativos con runCommand
+db.runCommand({ serverStatus: 1 })
+db.runCommand({ validate: "usuarios" })
+
+
+// especificar la ruta del directorio donde MongoDB almacena los datos
+mongod --dbpath /var/lib/mongodb
+
+// especificar la ruta del archivo donde MongoDB almacenará los registros de log
+mongod --logpath /var/log/mongodb/mongod.log
+
+// indicar a MongoDB que debe ejecutarse en segundo plano
+mongod --dbpath /var/lib/mongodb --logpath /var/log/mongodb/mongod.log --fork
+
+// especificar el nivel de reconocimiento que debe recibir un cliente al escribir datos en MongoDB. Define cuántos nodos deben confirmar la escritura antes de considerarla exitosa.
+
+
+// operación de inserción se considerará exitosa solo si la mayoría de los nodos confirman la escritura y se ha confirmado en el journal
+db.personas.insertOne(
+    { nombre: "Pedro", edad: 35, ciudad: "Valencia" },
+    { writeConcern: { w: "majority", j: true } }
+)
+
+
+// iniciar mongo con un archivo de configuracion
+mongod -f /etc/mongod.conf
+
+
+// insertar 
+db.personas.insertMany([
+    {
+        nombre: "Juan",
+        edad: 30,
+        direccion: {
+            calle: "Calle 123",
+            ciudad: "Madrid",
+            pais: "España"
+        },
+        telefonos: [
+            { tipo: "casa", numero: "123456789" },
+            { tipo: "movil", numero: "987654321" }
+        ],
+        aficiones: ["leer", "fútbol", "programar"]
+    },
+    {
+        nombre: "Ana",
+        edad: 25,
+        direccion: {
+            calle: "Avenida 456",
+            ciudad: "Barcelona",
+            pais: "España"
+        },
+        telefonos: [
+            { tipo: "casa", numero: "555555555" },
+            { tipo: "movil", numero: "444444444" }
+        ],
+        aficiones: ["pintar", "baloncesto", "música"]
+    },
+    {
+        nombre: "Pedro",
+        edad: 35,
+        direccion: {
+            calle: "Calle 789",
+            ciudad: "Valencia",
+            pais: "España"
+        },
+        telefonos: [
+            { tipo: "casa", numero: "222222222" },
+            { tipo: "movil", numero: "333333333" }
+        ],
+        aficiones: ["correr", "tenis", "ajedrez"]
+    }
+])
+
+
+// solo ciudad de la dirección
+db.personas.find({}, { "direccion.ciudad": 1, _id: 0 }).pretty()
+
+
+
+// solo números de teléfonos móvil
+db.personas.aggregate([
+    { $unwind: "$telefonos" },
+    { $match: { "telefonos.tipo": "movil" } },
+    { $project: { _id: 0, nombre: 1, "telefonos.numero": 1 } }
+]).pretty()
+
+
+// personas que tienen en aficiones pintar
+db.personas.find({ aficiones: "pintar" }, { nombre: 1, _id: 0 }).pretty()
+
+
+// campo de la ciudad informado y no nulo
+db.personas.find({ "direccion.ciudad": { $exists: true, $ne: null } }).pretty()
+
+// que el campo sea string
+db.personas.find({ "direccion.ciudad": { $type: "string" } }).pretty()
+
+
+// campo que dice si es adulto
+db.personas.aggregate([
+    {
+        $project: {
+            nombre: 1,
+            edad: 1,
+            esAdulto: {
+                $cond: { if: { $gte: ["$edad", 18] }, then: true, else: false }
+            }
+        }
+    }
+]).pretty()
+
+// si campo no existe, decir desconocido
+db.personas.aggregate([
+    {
+        $project: {
+            nombre: 1,
+            ciudad: { $ifNull: ["$direccion.ciudad", "Desconocida"] }
+        }
+    }
+]).pretty()
+
+// personas con 3 aficiones
+db.personas.find({ aficiones: { $size: 3 } }).pretty()
+
+// personas con estas aficiones
+db.personas.find({ aficiones: { $all: ["fútbol", "leer"] } }).pretty()
+
+// buscar que al menos un elemento del array tenga eso
+db.personas.find({ telefonos: { $elemMatch: { tipo: "movil", numero: "987654321" } } }).pretty()
+
+// incorporar el atributo esadulto
+db.personas.updateMany(
+    { edad: { $gt: 18 } },
+    { $set: { esAdulto: true } }
+)
+
+// omitir dos primeros
+db.personas.find().skip(2).pretty()
+
+
+// dos primeros telefonos de cada persona
+db.personas.find({}, { nombre: 1, telefonos: { $slice: 2 }, _id: 0 }).pretty()
+
+
+// actualizar primer elemento que coincida
+db.personas.updateOne(
+    { "telefonos.tipo": "movil" },
+    { $set: { "telefonos.$.numero": "999999999" } }
+)
+
+// incrementar en todos la edad en 1
+db.personas.updateMany({}, { $inc: { edad: 1 } })
+
+
+// si menos 18, se pone a 18
+db.personas.updateOne(
+    { nombre: "Laura" },
+    { $min: { edad: 18 } }
+)
+
+// si más 30, se pone a 30
+db.personas.updateOne(
+    { nombre: "Ana" },
+    { $max: { edad: 30 } }
+)
+
+// multiplica edad por 2
+db.personas.updateOne(
+    { nombre: "Pedro" },
+    { $mul: { edad: 2 } }
+)
+
+// eliminar campo
+db.personas.updateOne(
+    { nombre: "Juan" },
+    { $unset: { direccion: "" } }
+)
+
+
+// renombrar atributo
+db.personas.updateOne(
+    { nombre: "Ana" },
+    { $rename: { "deportesFavoritos": "hobbies" } }
+)
+
+
+
+// actualizar primer móvil de ana
+db.personas.updateOne(
+    { nombre: "Ana", "telefonos.tipo": "movil" },
+    { $set: { "telefonos.$.numero": "555555555" } }
+)
+
+
+// añadir elementos array
+db.personas.updateOne(
+    { nombre: "Juan" },
+    { $push: { deportesFavoritos: { $each: ["tenis", "natación", "ciclismo"] } } }
+)
+
+// eliminar elemento array
+db.personas.updateOne(
+    { nombre: "Juan" },
+    { $pull: { deportesFavoritos: "tenis" } }
+)
+
+
+// eliminar último
+db.personas.updateOne(
+    { nombre: "Juan" },
+    { $pop: { deportesFavoritos: 1 } }
+)
+
+
+db.createCollection("personas1")
+
+db.personas1.insertMany([
+    {
+        nombre: "Juan",
+        edades: [25, 30, 35],
+        telefonos: [
+            { tipo: "casa", numero: "123456789" },
+            { tipo: "movil", numero: "987654321" }
+        ],
+        deportes: ["fútbol", "baloncesto"]
+    },
+    {
+        nombre: "Ana",
+        edades: [20, 25, 30],
+        telefonos: [
+            { tipo: "casa", numero: "555555555" },
+            { tipo: "movil", numero: "444444444" }
+        ],
+        deportes: ["pintar", "baloncesto", "música"]
+    },
+    {
+        nombre: "Pedro",
+        edades: [30, 35, 40],
+        telefonos: [
+            { tipo: "casa", numero: "222222222" },
+            { tipo: "movil", numero: "333333333" }
+        ],
+        deportes: ["correr", "tenis", "ajedrez"]
+    }
+])
+
+
+// incrementar en 2 la edad de todos
+db.personas1.updateMany(
+    {},
+    { $inc: { "edades.$[]": 2 } }
+)
+
+// actualizar el número de teléfono móvil del primer elemento del array telefonos que tenga tipo "movil" para Ana
+db.personas1.updateOne(
+    { nombre: "Ana" },
+    { $set: { "telefonos.$[elem].numero": "555555555" } },
+    { arrayFilters: [{ "elem.tipo": "movil" }] }
+)
+
+// agrega elemento si no esta
+db.personas.updateOne(
+    { nombre: "Juan" },
+    { $addToSet: { deportes: "natación sinc" } }
+)
+
+// analizar consultas
+db.personas.find({ nombre: "Juan" }).explain()
+
+
+// indice compuesto
+db.personas.createIndex({ nombre: 1, edad: 1 })
+
+// índice en el campo edad solo para los documentos donde edad sea mayor que 25
+db.personas.createIndex(
+    { edad: 1 },
+    { partialFilterExpression: { edad: { $gt: 25 } } }
+)
+
+db.personas.getIndexes()
+// utiliza el índice edad con partialFilterExpression para optimizar las consultas
+db.personas.find({ edad: { $gt: 25 } }).explain("executionStats")
+
+// agregar campo
+db.personas.updateMany(
+    {}, 
+    { $set: { fechaExpiracion: new Date() } }
+)
+
+// los documentos se eliminarán automáticamente después de 1 hora de su fecha de expiración
+db.personas.createIndex(
+    { fechaExpiracion: 1 },
+    { expireAfterSeconds: 3600 } 
+)
+
+
+db.articulos.insertMany([
+    {
+        titulo: "Cómo optimizar consultas en MongoDB",
+        contenido: "Aprende a mejorar el rendimiento de tus consultas...",
+        autor: "Ana Gomez",
+        etiquetas: ["MongoDB", "Rendimiento", "Consulta"],
+        fecha_publicacion: new Date(),
+        vistas: 500
+    },
+    {
+        titulo: "Modelado de datos en MongoDB",
+        contenido: "Guía para diseñar el esquema de datos en MongoDB...",
+        autor: "Pedro Ramirez",
+        etiquetas: ["MongoDB", "Esquema", "Diseño"],
+        fecha_publicacion: new Date(),
+        vistas: 800
+    }
+])
+
+// crear índice
+db.articulos.createIndex({ titulo: "text", contenido: "text" })
+
+
+// búsqueda de artículos que contienen las palabras "base de datos"
+db.articulos.find({ $text: { $search: "base de datos" } })
+
+// proyectar los resultados de una búsqueda de texto y obtener metadatos relevantes, como la puntuación de relevancia (textScore).
+db.articulos.find(
+    { $text: { $search: "base de datos" } },
+    { score: { $meta: "textScore" } }
+)
+
+db.articulos.getIndexes()
+db.articulos.dropIndex("titulo_text_contenido_text")
+
+
+// idioma por defecto para las búsquedas de texto y asignar pesos a los campos indexados para controlar la relevancia de los resultados
+db.articulos.createIndex(
+    { titulo: "text", contenido: "text" },
+    {
+        default_language: "spanish",
+        weights: { titulo: 10, contenido: 5 }
+    }
+)
+
+//localizaciones
+db.localizaciones.createIndex({ ubicacion: "2dsphere" })
+db.localizaciones.insertMany([
+    {
+        nombre: "Oficina Central",
+        ubicacion: { type: "Point", coordinates: [ -73.9749, 40.7736 ] }  // Longitud, Latitud
+    },
+    {
+        nombre: "Tienda A",
+        ubicacion: { type: "Point", coordinates: [ -73.9878, 40.7590 ] }
+    },
+    {
+        nombre: "Tienda B",
+        ubicacion: { type: "Point", coordinates: [ -73.9804, 40.7621 ] }
+    },
+    {
+        nombre: "Almacén",
+        ubicacion: { type: "Point", coordinates: [ -73.9552, 40.7791 ] }
+    }
+])
+
+
+// punto de referencia (Longitud, Latitud)
+var puntoReferencia = { type: "Point", coordinates: [ -73.9808, 40.7701 ] };
+
+// encontrar ubicaciones cercanas en un radio de 2000 metros
+db.localizaciones.find({
+    ubicacion: {
+        $near: {
+            $geometry: puntoReferencia,
+            $maxDistance: 2000  
+        }
+    }
+})
+
+
+// un círculo (Longitud, Latitud, Radio en radianes)
+// 0.01 radianes ≈ 0.57 grados ≈ 63 km
+var circulo = {
+    center: [ -73.9808, 40.7701 ],
+    radius: 0.01  
+};
+
+// encontrar ubicaciones dentro del círculo
+db.localizaciones.find({
+    ubicacion: {
+        $geoWithin: {
+            $centerSphere: [ circulo.center, circulo.radius ]
+        }
+    }
+})
+
+
+// un polígono como un área de interés (polígono con varios puntos)
+var poligono = {
+    type: "Polygon",
+    coordinates: [
+        [
+            [ -73.975, 40.775 ],
+            [ -73.975, 40.765 ],
+            [ -73.965, 40.765 ],
+            [ -73.965, 40.775 ],
+            [ -73.975, 40.775 ]
+        ]
+    ]
+};
+
+// encontrar ubicaciones que intersecten con el polígono
+db.localizaciones.find({
+    ubicacion: {
+        $geoIntersects: {
+            $geometry: poligono
+        }
+    }
+})
+
+// encontrar ubicaciones en un rango de distancia específico
+db.localizaciones.find({
+    ubicacion: {
+        $near: {
+            $geometry: puntoReferencia,
+            $minDistance: 1000,  
+            $maxDistance: 5000  
+        }
+    }
+})
+
+
+db.personas.insertMany([
+    { nombre: "Juan" },
+    { nombre: "Ana" },
+    { nombre: "Pedro" }
+])
+
+db.personas.updateOne(
+    { nombre: "Juan" },
+    { $set: { apellido: "Perez" } }
+)
+
+db.personas.updateOne(
+    { nombre: "Ana" },
+    { $set: { apellido: "Gomez" } }
+)
+
+db.personas.updateOne(
+    { nombre: "Pedro" },
+    { $set: { apellido: "Lopez" } }
+)
+
+
+// concatenar 
+db.personas.aggregate([
+    {
+        $project: {
+            nombreCompleto: { $concat: ["$nombre", " ", "$apellido"] }
+        }
+    }
+])
+
+
+db.productos.insertMany([
+    { nombre: "Camiseta", codigo: "ABC12345" },
+    { nombre: "Pantalones", codigo: "XYZ67890" }
+])
+
+
+// extraer primeros caracteres
+db.productos.aggregate([
+    {
+        $project: {
+            codigoCorto: { $substrCP: ["$codigo", 0, 3] }
+        }
+    }
+])
+
+
+db.localizaciones.insertMany([
+    { nombre: "Oficina Central", coords: "-73.9749,40.7736" },
+    { nombre: "Tienda A", coords: "-73.9878,40.7590" }
+])
+
+
+// separa coordenadas por comas y las convierte
+db.localizaciones.aggregate([
+    {
+        $project: {
+            nombre: 1,
+            coordenadas: {
+                $map: {
+                    input: { $split: ["$coords", ","] },
+                    as: "coord",
+                    in: { $convert: { input: "$$coord", to: "double" } }
+                }
+            }
+        }
+    }
+])
+
+
+db.eventos.insertMany([
+    { nombre: "Evento A", fecha: "2024-07-01T00:00:00Z" },
+    { nombre: "Evento B", fecha: "2024-07-02T00:00:00Z" }
+])
+
+// convertir a fecha
+db.eventos.aggregate([
+    {
+        $project: {
+            nombre: 1,
+            fecha: { $toDate: "$fecha" }
+        }
+    }
+])
+
+// extrae el año
+db.eventos.aggregate([
+    {
+        $project: {
+            nombre: 1,
+            fechaISOYear: { $isoWeekYear: { $toDate: "$fecha" } }
+        }
+    }
+])
+
+
+db.usuariosArray.insertMany([
+    { nombre: "Juan", intereses: ["fútbol", "baloncesto", "cine"] },
+    { nombre: "Ana", intereses: ["música", "lectura"] }
+])
+
+
+// descompone el array: Ana con música, Ana con lectura
+db.usuariosArray.aggregate([
+    { $unwind: "$intereses" }
+])
+
+
+db.pedidos.insertMany([
+    { cliente: "Juan", productos: ["manzana", "naranja", "manzana"] },
+    { cliente: "Ana", productos: ["pera", "pera", "manzana"] }
+])
+
+
+// agrega elementos a un set eliminando duplicados
+db.pedidos.aggregate([
+    { $unwind: "$productos" },
+    { $group: {
+        _id: null, 
+        productosUnicos: { $addToSet: "$productos" }
+    }},
+    { $project: {
+        _id: 0,
+        productosUnicos: 1
+    }}
+])
+
+
+db.usuariosEdades.insertMany([
+    { nombre: "Juan", edades: [10, 15, 20, 25] },
+    { nombre: "Ana", edades: [30, 35, 40, 45] }
+])
+
+// filtra en el array edades mayores de 20
+db.usuariosEdades.aggregate([
+    {
+        $project: {
+            nombre: 1,
+            edadesMayoresDe20: {
+                $filter: {
+                    input: "$edades",
+                    as: "edad",
+                    cond: { $gt: ["$$edad", 20] }
+                }
+            }
+        }
+    }
+])
+
+// primer elemento del array
+db.pedidos.aggregate([
+    {
+        $project: {
+            cliente: 1,
+            primerProducto: { $first: "$productos" }
+        }
+    }
+])
+
+
+db.ventas.insertMany([
+    { producto: "Producto A", cantidad: 5, fecha: ISODate("2024-01-01T00:00:00Z") },
+    { producto: "Producto B", cantidad: 15, fecha: ISODate("2024-02-01T00:00:00Z") },
+    { producto: "Producto C", cantidad: 25, fecha: ISODate("2024-03-01T00:00:00Z") },
+    { producto: "Producto D", cantidad: 35, fecha: ISODate("2024-04-01T00:00:00Z") }
+])
+
+
+// agrupa las ventas en intervalos de 10 unidades
+db.ventas.aggregate([
+    {
+        $bucket: {
+            groupBy: "$cantidad",
+            boundaries: [0, 10, 20, 30, 40],
+            default: "Otros",
+            output: {
+                totalVentas: { $sum: 1 },
+                productos: { $push: "$producto" }
+            }
+        }
+    }
+])
+
+
+db.empleados.insertMany([
+    { nombre: "Juan", salario: 3000, fecha_contratacion: ISODate("2020-01-01T00:00:00Z") },
+    { nombre: "Ana", salario: 4000, fecha_contratacion: ISODate("2019-01-01T00:00:00Z") },
+    { nombre: "Pedro", salario: 5000, fecha_contratacion: ISODate("2018-01-01T00:00:00Z") }
+])
+
+
+// escribe los resultados en una nueva colección
+db.empleados.aggregate([
+    {
+        $project: {
+            nombre: 1,
+            salarioAnual: { $multiply: ["$salario", 12] }
+        }
+    },
+    {
+        $out: "empleadosResumen"
+    }
+])
+
+
+const puntoReferencia = { type: "Point", coordinates: [ -73.96, 40.76 ] };
+
+
+// ubicaciones cercanas al punto de referencia
+db.localizaciones.aggregate([
+    {
+        $geoNear: {
+            near: puntoReferencia,
+            distanceField: "distancia",
+            spherical: true,
+            maxDistance: 5000 
+        }
+    }
+]).pretty()
+
+// estadísticas de la colección
+db.localizaciones.stats()
+
+
+db.productosInc.insertMany([
+    { nombre: "Producto A", amount: 10, valuation: 100 },
+    { nombre: "Producto B", amount: 20, valuation: 200 },
+    { nombre: "Producto C", amount: 30, valuation: 300 }
+])
+
+// incrementar a la vez
+db.productosInc.updateMany(
+    {},
+    { $inc: { amount: 10, valuation: 100 } }
+)
+
+// crear usuario
+db.createUser({
+    user: "adminUser",
+    pwd: "adminPassword",
+    roles: [
+        { role: "userAdminAnyDatabase", db: "admin" },
+        { role: "readWriteAnyDatabase", db: "admin" }
+    ]
+})
+
+
+// autenticarse
+db.auth("adminUser", "adminPassword")
+
+
+mongo -u adminUser -p adminPassword --authenticationDatabase admin
+
+
+// para una base concreta
+db.createUser({
+    user: "dbUser",
+    pwd: "dbPassword",
+    roles: [
+        { role: "readWrite", db: "baseCurso" }
+    ]
+})
+
+
+// actualizar usuario
+db.updateUser("dbUser", {
+    pwd: "newDbPassword",
+    roles: [
+        { role: "readWrite", db: "baseCurso" },
+        { role: "dbAdmin", db: "baseCurso" }
+    ]
+})
+
+mongo -u dbUser -p dbPassword --authenticationDatabase baseCurso
+
+
+// importar datos
+mongoimport --host localhost --db miBaseDeDatos --collection productos --type csv --file productos.csv --headerline
+
+
+// cursor
+const cursor = db.productos.find({  }); 
+
+while (cursor.hasNext()) {
+    const producto = cursor.next();
+    print(`Nombre: ${producto.nombre}, codigo: ${producto.codigo}`);
+}
+
+
+mongoimport --db baseDatos --collection persons --file persons.json --jsonArray
+use baseDatos
+show collections
+
+// busca mujeres, agrupa por estado y cuenta
+db.persons.aggregate([
+    { $match: { gender: 'female' } },
+    { $group: { _id: { state: "$location.state" }, totalPersons: { $sum: 1 } } },
+    { $sort: { totalPersons: -1 } }
+]).pretty();
+
+
+
+// crea el nombre completo poniendo primera letra a mayúscula
+db.persons.aggregate([
+    {
+      $project: {
+        _id: 0,
+        gender: 1,
+        fullName: {
+          $concat: [
+            { $toUpper: { $substrCP: ['$name.first', 0, 1] } },
+            {
+              $substrCP: [
+                '$name.first',
+                1,
+                { $subtract: [{ $strLenCP: '$name.first' }, 1] }
+              ]
+            },
+            ' ',
+            { $toUpper: { $substrCP: ['$name.last', 0, 1] } },
+            {
+              $substrCP: [
+                '$name.last',
+                1,
+                { $subtract: [{ $strLenCP: '$name.last' }, 1] }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]).pretty();
+
+
+
+
+// convertir tipos de datos (birthdate a tipo date, location.coordinates a tipo double), y calcular age
+// nombre completo como antes  
+  db.persons.aggregate([
+    {
+      $project: {
+        _id: 0,
+        name: 1,
+        email: 1,
+        birthdate: { $convert: { input: '$dob.date', to: 'date' } },
+        age: "$dob.age",
+        location: {
+          type: 'Point',
+          coordinates: [
+            {
+              $convert: {
+                input: '$location.coordinates.longitude',
+                to: 'double',
+                onError: 0.0,
+                onNull: 0.0
+              }
+            },
+            {
+              $convert: {
+                input: '$location.coordinates.latitude',
+                to: 'double',
+                onError: 0.0,
+                onNull: 0.0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      $project: {
+        gender: 1,
+        email: 1,
+        location: 1,
+        birthdate: 1,
+        age: 1,
+        fullName: {
+          $concat: [
+            { $toUpper: { $substrCP: ['$name.first', 0, 1] } },
+            {
+              $substrCP: [
+                '$name.first',
+                1,
+                { $subtract: [{ $strLenCP: '$name.first' }, 1] }
+              ]
+            },
+            ' ',
+            { $toUpper: { $substrCP: ['$name.last', 0, 1] } },
+            {
+              $substrCP: [
+                '$name.last',
+                1,
+                { $subtract: [{ $strLenCP: '$name.last' }, 1] }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]).pretty();
+
+
+
+// agrupa y ordena por año de nacimiento
+  db.persons.aggregate([
+    {
+      $project: {
+        _id: 0,
+        name: 1,
+        email: 1,
+        birthdate: { $toDate: '$dob.date' },
+        age: "$dob.age",
+        location: {
+          type: 'Point',
+          coordinates: [
+            {
+              $convert: {
+                input: '$location.coordinates.longitude',
+                to: 'double',
+                onError: 0.0,
+                onNull: 0.0
+              }
+            },
+            {
+              $convert: {
+                input: '$location.coordinates.latitude',
+                to: 'double',
+                onError: 0.0,
+                onNull: 0.0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      $project: {
+        gender: 1,
+        email: 1,
+        location: 1,
+        birthdate: 1,
+        age: 1,
+        fullName: {
+          $concat: [
+            { $toUpper: { $substrCP: ['$name.first', 0, 1] } },
+            {
+              $substrCP: [
+                '$name.first',
+                1,
+                { $subtract: [{ $strLenCP: '$name.first' }, 1] }
+              ]
+            },
+            ' ',
+            { $toUpper: { $substrCP: ['$name.last', 0, 1] } },
+            {
+              $substrCP: [
+                '$name.last',
+                1,
+                { $subtract: [{ $strLenCP: '$name.last' }, 1] }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    { $group: { _id: { birthYear: { $isoWeekYear: "$birthdate" } }, numPersons: { $sum: 1 } } },
+    { $sort: { numPersons: -1 } }
+  ]).pretty();
+
+
+
+ // crear colección con validaciones 
+  db.createCollection('posts', {
+    validator: {
+      $jsonSchema: {
+        bsonType: 'object',
+        required: ['title', 'text', 'creator', 'comments'],
+        properties: {
+          title: {
+            bsonType: 'string',
+            description: 'must be a string and is required'
+          },
+          text: {
+            bsonType: 'string',
+            description: 'must be a string and is required'
+          },
+          creator: {
+            bsonType: 'objectId',
+            description: 'must be an objectid and is required'
+          },
+          comments: {
+            bsonType: 'array',
+            description: 'must be an array and is required',
+            items: {
+              bsonType: 'object',
+              required: ['text', 'author'],
+              properties: {
+                text: {
+                  bsonType: 'string',
+                  description: 'must be a string and is required'
+                },
+                author: {
+                  bsonType: 'objectId',
+                  description: 'must be an objectid and is required'
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+  
+
+
+// cambiar validaciones
+  db.runCommand({
+    collMod: 'posts',
+    validator: {
+      $jsonSchema: {
+        bsonType: 'object',
+        required: ['title', 'text', 'creator', 'comments'],
+        properties: {
+          title: {
+            bsonType: 'string',
+            description: 'must be a string and is required'
+          },
+          text: {
+            bsonType: 'string',
+            description: 'must be a string and is required'
+          },
+          creator: {
+            bsonType: 'objectId',
+            description: 'must be an objectid and is required'
+          },
+          comments: {
+            bsonType: 'array',
+            description: 'must be an array and is required',
+            items: {
+              bsonType: 'object',
+              required: ['text', 'author'],
+              properties: {
+                text: {
+                  bsonType: 'string',
+                  description: 'must be a string and is required'
+                },
+                author: {
+                  bsonType: 'objectId',
+                  description: 'must be an objectid and is required'
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    validationAction: 'warn'
+  });
+  
+// permite que los documentos que no cumplen con las reglas de validación sean aceptados, pero advierte sobre estas violaciones
+
+
+// cuenta agrupando por buckets y muestra su media
+db.persons.aggregate([
+  {
+    $bucket: {
+      groupBy: '$dob.age',
+      boundaries: [18, 30, 40, 50, 60, 120],
+      output: {
+        numPersons: { $sum: 1 },
+        averageAge: { $avg: '$dob.age' }
+      }
+    }
+  }
+]).pretty();
+
+
+// otra forma, pero marcando 5 buckets
+db.persons.aggregate([
+    {
+      $bucketAuto: {
+        groupBy: '$dob.age',
+        buckets: 5,
+        output: {
+          numPersons: { $sum: 1 },
+          averageAge: { $avg: '$dob.age' }
+        }
+      }
+    }
+  ]).pretty();
+
+// hombres, concatenando nombre completo con la fecha de nacimiento
+  db.persons.aggregate([
+    { $match: { gender: "male" } },
+    { $project: { _id: 0, gender: 1, name: { $concat: ["$name.first", " ", "$name.last"] }, birthdate: { $toDate: "$dob.date" } } },
+    { $sort: { birthdate: 1 } },
+    { $skip: 10 },
+    { $limit: 10 }
+  ]).pretty();
+
+
+// guardando resultados
+  db.persons.aggregate([
+    {
+      $project: {
+        _id: 0,
+        name: 1,
+        email: 1,
+        birthdate: { $toDate: '$dob.date' },
+        age: "$dob.age",
+        location: {
+          type: 'Point',
+          coordinates: [
+            {
+              $convert: {
+                input: '$location.coordinates.longitude',
+                to: 'double',
+                onError: 0.0,
+                onNull: 0.0
+              }
+            },
+            {
+              $convert: {
+                input: '$location.coordinates.latitude',
+                to: 'double',
+                onError: 0.0,
+                onNull: 0.0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      $project: {
+        gender: 1,
+        email: 1,
+        location: 1,
+        birthdate: 1,
+        age: 1,
+        fullName: {
+          $concat: [
+            { $toUpper: { $substrCP: ['$name.first', 0, 1] } },
+            {
+              $substrCP: [
+                '$name.first',
+                1,
+                { $subtract: [{ $strLenCP: '$name.first' }, 1] }
+              ]
+            },
+            ' ',
+            { $toUpper: { $substrCP: ['$name.last', 0, 1] } },
+            {
+              $substrCP: [
+                '$name.last',
+                1,
+                { $subtract: [{ $strLenCP: '$name.last' }, 1] }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    { $out: "transformedPersons" }
+  ]).pretty();
+
+
+db.transformedPersons.createIndex({ location: "2dsphere" });
+  
+
+// documentos cercanos a un punto y filtrando por edad
+db.transformedPersons.aggregate([
+  {
+    $geoNear: {
+      near: {
+        type: 'Point',
+        coordinates: [-18.4, -42.8]
+      },
+      maxDistance: 1000000,
+      query: { age: { $gt: 30 } },
+      distanceField: "distance"
+    }
+  },
+  { 
+    $limit: 10 
+  }
+]).pretty();
+
+
+
+
+db.friends.insertMany([
+  {
+    name: "Alice",
+    age: 25,
+    hobbies: ["reading", "cycling", "hiking"],
+    examScores: [85, 90, 78]
+  },
+  {
+    name: "Bob",
+    age: 30,
+    hobbies: ["cooking", "swimming"],
+    examScores: [88, 92, 80]
+  },
+  {
+    name: "Charlie",
+    age: 22,
+    hobbies: ["gaming", "programming", "chess"],
+    examScores: [95, 87, 89]
+  },
+  {
+    name: "Diana",
+    age: 28,
+    hobbies: ["painting", "dancing"],
+    examScores: [91, 85, 88]
+  }
+]);
+
+
+// agrupa hobbies por edad
+  db.friends.aggregate([
+    { $unwind: "$hobbies" }, 
+    { $group: { _id: { age: "$age" }, allHobbies: { $push: "$hobbies" } } }
+  ]).pretty();
+
+
+// sin repetir
+db.friends.aggregate([
+    { $unwind: "$hobbies" }, 
+    { $group: { _id: { age: "$age" }, allHobbies: { $addToSet: "$hobbies" } } }
+  ]).pretty();
+
+
+// coge el elemento 2 solo
+db.friends.aggregate([
+    { $project: { _id: 0, examScore: { $slice: ["$examScores", 2, 1] } } }
+  ]).pretty();
+
+
+// muestra tamaño del array
+  db.friends.aggregate([
+    { $project: { _id: 0, numScores: { $size: "$examScores" } } }
+  ]).pretty();
+
+
+
+// filtra para cada uno los scores mayores a 90
+db.friends.aggregate([
+  {
+    $project: {
+      _id: 0, 
+      name: 1, 
+      highScores: {
+        $filter: {
+          input: "$examScores",
+          as: "score",
+          cond: { $gt: ["$$score", 90] }
+        }
+      }
+    }
+  }
+]).pretty();
+
+
+// mayor score de cada uno
+  db.friends.aggregate([
+    { $unwind: "$examScores" },
+    { $project: { _id: 1, name: 1, age: 1, score: "$examScores" } },
+    { $sort: { score: -1 } },
+    { $group: { _id: "$_id", name: { $first: "$name" }, maxScore: { $max: "$score" } } },
+    { $sort: { maxScore: -1 } }
+  ]).pretty();
