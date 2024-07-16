@@ -1,15 +1,16 @@
-mongosh //para iniciar conexion
-cls //limpiar consola
-exit //salir
+mongosh // para iniciar conexion
+cls // limpiar consola
+exit // salir
 
-show dbs //mostrar databases
-db.dropDatabase("usuarios") //eliminar database
+show dbs // mostrar databases
+db.dropDatabase("usuarios") // eliminar database
 
-use usuarios //para crear database
-show collections  //mostrar colecciones
+use usuarios // para crear database
+show collections  // mostrar colecciones
 
-db.createCollection("usuario")  //crear coleccion
+db.createCollection("usuario")  // crear colección
 
+// crear elemento con arrays y date
 db.usuario.insertOne({
     "_id": ObjectId("123456789012"),
     "nombre": "Juan Pérez",
@@ -28,13 +29,15 @@ db.usuario.insertOne({
     ],
     "ultima_conexion": ISODate("2024-04-27T18:30:00Z"),
     "activo": true
-  }) // si no esta la coleccion la crea
+  }) 
+// si no esta la colección la crea
 
 
 db.usuario.find() //ver elementos
 db.getCollection("usuario").find()
 
 
+// insertar varios
 db.usuario.insertMany([
   {
     "_id": ObjectId("123456789013"),
@@ -86,12 +89,14 @@ db.usuario.insertMany([
   {name: "pablo", age: 21, points: 7.0}
 ]
 
+
+// otro ejemplo de insercción con estructura compleja y nulos
 db.students.insertOne({
   name: "chema", 
   age: 23,
   tipo: true, 
   date: new Date("2020-02-01T00:00:00"), 
-  graduacion:null, 
+  graduacion: null, 
   courses:["uno","dos"],
   direccion:{
     calle:"bodeguilla",
@@ -99,98 +104,104 @@ db.students.insertOne({
     zip:83838}
     }
   )
-  //otro ejemplo de inserccion
 
 
-db.usuario.find().sort({nombre:1}) //asc: primero a ultimo z
-db.usuario.find().sort({nombre:-1})  //desc: primero z ultimo a
-db.usuario.find().sort({edad:1}) //menos a mas
-db.usuario.find().sort({edad:-1})  //mas a menos
+// find ordenando
+// asc: primero a último z
+db.usuario.find().sort({nombre:1}) 
+// desc: primero z último a
+db.usuario.find().sort({nombre:-1})  
+// menos a más
+db.usuario.find().sort({edad:1}) 
+// más a menos
+db.usuario.find().sort({edad:-1})  
 
-db.usuario.find().sort({_id: -1}) //por fecha de creacion, mas recientes primero
+// por fecha de creación, más recientes primero
+db.usuario.find().sort({_id: -1}) 
 
-
-db.usuario.find().sort({edad:-1}).limit(1)  //el de mas edad, limitando resultados
+// el de más edad, limitando resultados
+db.usuario.find().sort({edad:-1}).limit(1)  
 
 //compass
 {name:1} y poner limit 1
 
+// find con dos condiciones
+db.usuario.find({edad:30, ciudad: "Ciudad de México"})  
 
-db.usuario.find({edad:30, ciudad: "Ciudad de México"})  //dos condiciones
-
-
-db.usuario.find({},{nombre: true})  //campos a mostrar, solo nombre
-db.usuario.find({},{_id: false,nombre: true,edad:true}) //sin id, nombre y edad
+// campos a mostrar, solo nombre
+db.usuario.find({},{nombre: true})  
+// sin id, solo nombre y edad
+db.usuario.find({},{_id: false,nombre: true,edad:true}) 
 
 //compass
 {_id: false,nombre:true,edad:true}
 
 
-
+//actualizar elemento con un criterio y el campo a modificar
 db.usuario.updateOne({
   nombre:"Carlos López",
   edad:32},
   {$set: {ciudad:"Rio Janeiro"}}
 )  
-//criterio y el campo a modificar
 
 
+// actualizar por el id
 db.usuario.updateOne({
   _id:ObjectId("313233343536373839303134")},
   {$set: {nombre:"Javier Martínez"}})
-//actualizar por el id
 
 
+// eliminar campo actualizando
 db.usuario.updateOne({
   _id:ObjectId("313233343536373839303134")},
   {$unset: {edad:""}})  
-//eliminar campo
 
+// crear campo actualizando
 db.usuario.updateOne({
   _id:ObjectId("313233343536373839303134")},
   {$set: {edad:32}}) 
-//crear campo
 
 
+// actualizar varios, todos los mayores de 25 se les pone atributo
 db.usuario.updateMany({
   edad:{$gt:25}},
   {$set: {mayores25:true}})  
-//todos los mayores de 25 se les pone atributo
 
+
+// los que tienen el atributo mayores25 se le pone atributo, actualizar si tienen atributo
 db.usuario.updateMany({
   mayores25: {$exists:true}},
   {$set: {clienteHabitual:true}}) 
-//los que tienen el atributo mayores25 se le pone atributo
 
 
-//eliminar campo y añadir en compass
-//exportar coleccion en compass
-//eliminar elemento en compass
 
 
-db.usuario.deleteOne({nombre:"Javier Martínez"}) //eliminar 1
-db.usuario.deleteMany({mayores25: true}) //eliminar varios
+
+//eliminar uno por condición
+db.usuario.deleteOne({nombre:"Javier Martínez"}) 
+// eliminar varios
+db.usuario.deleteMany({mayores25: true}) 
 
 
 
 //volvemos a insertar elementos como arriba
 
 
+// todos los mayores de 30 se les pone atributo actualizando si cumplen condición
 db.usuario.updateMany({
   edad:{$gt:30}},
   {$set: {mayores30:true}})  
-//todos los mayores de 30 se les pone atributo
 
 
-
-db.usuario.deleteMany({mayores30:{$exists:false}}) //borrar los que no tienen este campo
-
-
-
-db.usuario.deleteOne({nombre:"Carlos López"})//eliminamos el que queda
+// eliminar los que no tienen este campo
+db.usuario.deleteMany({mayores30:{$exists:false}}) 
 
 
-//volver a insertar como hemos hecho arriba pero en este caso sin ids
+// eliminar por condición
+db.usuario.deleteOne({nombre:"Carlos López"})
+
+
+// volver a insertar como arriba pero sin ids
 db.usuario.insertMany([
   {
     "nombre": "María García",
@@ -247,80 +258,91 @@ db.usuario.insertMany([
   }
 ])
 
-db.usuario.find().sort({_id: -1}) //por fecha de creacion, mostrar mas recientes primero
+// ordenar por fecha de creación, mostrar más recientes primero
+db.usuario.find().sort({_id: -1}) 
 
 
 //tambien se puede importar el json anterior en compass
 
 
-db.usuario.find({nombre:{$ne:"María García"}}) //nombre no María García
-db.usuario.find({edad:{$lt:30}}) //menos de 30 de edad
-db.usuario.find({edad:{$lte:30}})  //menos o igual
-db.usuario.find({edad:{$gt:30}}) //mayor que
-db.usuario.find({edad:{$gte:30}})  //mayor o igual
-db.usuario.find({edad:{$gte:28 ,$lt:30}})  //mayor y menor en rango
-db.usuario.find({nombre:{$in:['María García','Juan Pérez']}})  //nombre en array
-db.usuario.find({nombre:{$nin:['María García','Juan Pérez']}})  //nombre no en array
+// nombre que no sea María García
+db.usuario.find({nombre:{$ne:"María García"}}) 
+// menos de 30 de edad
+db.usuario.find({edad:{$lt:30}}) 
+// menos o igual
+db.usuario.find({edad:{$lte:30}})  
+// mayor que
+db.usuario.find({edad:{$gt:30}}) 
+// mayor o igual
+db.usuario.find({edad:{$gte:30}})  
+// mayor y menor en rango
+db.usuario.find({edad:{$gte:28 ,$lt:30}})  
+// nombre en array
+db.usuario.find({nombre:{$in:['María García','Juan Pérez']}}) 
+// nombre no en array 
+db.usuario.find({nombre:{$nin:['María García','Juan Pérez']}})  
 
-
-db.usuario.find({nombre: {$regex: /María|Juan/i}}) //nombres que contengan Maria o Juan
+// nombres que contengan María o Juan
+db.usuario.find({nombre: {$regex: /María|Juan/i}}) 
 
 
 //compass aplicar filtros de mayor y menor
 {age:{$gte:22}}
 
-
+// encontrar lo de más de 30 y activo true
 db.usuario.find(
   {$and:
     [{edad:
         {$gte:30}},
           {activo:true}]}
 )
-//mas de 30 y activo true
 
+//or, encontrar los que cumplen una condición u otra
 db.usuario.find(
   {$or:
     [{edad:
         {$gte:30}},
           {nombre: 'María García'}]}
 )
-//or
 
+// los que no cumplen ninguna condición, ambas false
 db.usuario.find(
   {$nor:
     [{edad:
         {$gte:30}},
           { nombre: 'Carlos López'}]}
 )
-//ambas false
 
-db.usuario.find(
-  {$nor:
-    [{edad:
-        {$gte:30}},
-          { nombre: 'María García'}]}
-)
-//no encuentra
+
 
 
 //modificar age a null en compass
 
-db.usuario.updateOne({ nombre: 'María García'}, { $set: { edad: null } }) //poner atributo a null
+ // actualizar y poner atributo a null
+db.usuario.updateOne({ nombre: 'María García'}, { $set: { edad: null } })
 
-db.usuario.find({edad:{$not:{$gte:30}}}) //que no son mayores a 30, me da el nulo tambien
+// que no son mayores a 30, me da el nulo también
+db.usuario.find({edad:{$not:{$gte:30}}}) 
 
-db.usuario.find({nombre: 'María García'}).explain("executionStats") //comprueba los documentos, los que existan
-db.usuario.createIndex({nombre:1}) //crear indice
+// comprueba los documentos, proporciona información detallada sobre el rendimiento de una consulta
+db.usuario.find({nombre: 'María García'}).explain("executionStats") 
+// crear índice
+db.usuario.createIndex({nombre:1}) 
 
-db.usuario.find({nombre: 'María García'}).explain("executionStats") //solo comprueba 1
-db.usuario.getIndexes()  //ver indices, de inicio, hay uno en el id tambien
-db.usuario.dropIndex("nombre_1")  //eliminar indice
+// solo comprueba una, la que coincide el nombre
+db.usuario.find({nombre: 'María García'}).explain("executionStats") 
+// ver índices, de inicio, hay uno en el id tambien
+db.usuario.getIndexes()  
+// eliminar índice
+db.usuario.dropIndex("nombre_1")  
 
-//crear indice en compass
-//los indices permiten buscar mas rapido. Recomendado si muchas busquedas pero sin actualizar. Actualizar e introducir va lento
+// crear índice en compass
+// los índices permiten buscar más rápido. Recomendado si muchas búsquedas pero sin actualizar. Actualizar e introducir va lento
 
-db.usuario.updateOne({ nombre: 'María García'}, { $set: { edad: 31 } }) //reestablecer edad
+// reestablecer edad actualizandola
+db.usuario.updateOne({ nombre: 'María García'}, { $set: { edad: 31 } }) 
 
+// entre los nombres seleccionados y con edad más de 30
 db.usuario.find(
     {$and:
         [{edad:
@@ -329,10 +351,9 @@ db.usuario.find(
                 {$in:["María García","Juan Pérez"]}
                     }
                     ]})
-//nombres y con edad mas de 30
 
 
-
+//condicion or. cumpla que esté en el array de nombres o edad más de 28
 db.usuario.find(
     {$or:
         [{edad:
@@ -341,8 +362,8 @@ db.usuario.find(
                 {$in:["María García","Juan Pérez"]}
                     }
                     ]})
-//condicion or: nombre o edad
 
+// ni nombre en los definidos ni edad superior a 34, no cumple ninguna condición
 db.usuario.find(
     {$nor:
         [{edad:
@@ -351,28 +372,32 @@ db.usuario.find(
                 {$in:["María García","Juan Pérez"]}
                     }
                     ]})
-//ni nombre en los definidos ni edad superior a 34. Hay uno que es menor a 34 sin nombre de los comentados
 
 
-
+// los que no tienen más de 31 de edad mostrando también los null
 db.usuario.find({edad:{$not:{$gt:31}}})
-//los que no tienen mas de 31 de edad incluyendo null
 
 
+// capped limita el tamaño, que se pone en size como máximo y en max, el máximo de documentos
+// autoindex para aplicar índice al object id
 db.createCollection("companeros",{capped:true,size:1000000,max:100},{autoIndexId:false})
-//capped limita el tamaño que se pone en size como maximo y en max maximo de documentos
-//autoindex aplicar indice al object id
+
 db.createCollection("amigos")
-db.amigos.drop()  //eliminar colecciones
+// eliminar colección
+db.amigos.drop()  
 db.companeros.drop()
-show collections  //ver colecciones
+// ver colecciones
+show collections  
 
 
 
 
-//las aggregations pueden tener varios pasos. Cada paso coge la informacion del paso anterior
+// las aggregations pueden tener varios pasos. Cada paso coge la información del paso anterior
+// actualizar ciudad por condición
 db.usuario.updateOne({ nombre: "Juan Pérez"}, { $set: { ciudad: "Guadalajara" } })
 
+
+// filtra mayores de 30, agrupa por la ciudad y suma sus edades
 db.usuario.aggregate([
   {
     $match:{edad:{$gte:30}} 
@@ -382,17 +407,14 @@ db.usuario.aggregate([
   }
 ])
 
-//filtra mayores de 30, agrupa por la ciudad y suma sus edades
 
-
-
+// muestra valores diferentes en ciudad
 db.usuario.aggregate(
     [ { $group : { _id : "$ciudad" } } ]
 )
-//muestra diferentes valor en ciudad
 
 
-//project define los campos a mostrar
+// project define los campos a mostrar, ordena por edad de mayor a menor y limita resultados
 db.usuario.aggregate([ 
   { 
     $sort: { "edad": -1 } 
@@ -408,11 +430,10 @@ db.usuario.aggregate([
     $limit: 5
   }
 ])
-//ordena por edad de mayor a menor
-//limita a 5 resultados
 
 
-//match filtra los que cumplen
+
+// match aplica filtro según condición para cumplir
 db.usuario.aggregate([ 
   { $match : { ciudad : "Guadalajara" } },
   { $limit: 2 },
@@ -424,7 +445,7 @@ db.usuario.aggregate([
 ])
 
 
-//cuenta los de ciudad Guadalajara
+// primero filtra y después cuenta los de ciudad Guadalajara
 db.usuario.aggregate([
   {
     $match: { "ciudad": "Guadalajara" }
@@ -434,7 +455,7 @@ db.usuario.aggregate([
   }
 ])
 
-//realiza operacion y lo guarda en coleccion. Agrupa por ciudad
+// realiza operación y lo guarda en colección. Agrupa por ciudad
 db.usuario.aggregate([
   {
     $group: {
@@ -444,16 +465,18 @@ db.usuario.aggregate([
   { $out: "colecAgrup" }
 ])
 
-db.colecAgrup.find() //ver resultado
-db.colecAgrup.drop() //eliminamos coleccion
+// ver resultado
+db.colecAgrup.find() 
+//eliminar colección
+db.colecAgrup.drop() 
 show collections
 
 
-//que tengan Mar
+// que contengan Mar
 db.usuario.find({ nombre: { $regex: /Mar/ } })
 
 
-//activo, edad y ciudad
+// filtrar los que estén activo, por edad y por ciudad
 db.usuario.aggregate([
   {
     $match: {
@@ -465,7 +488,7 @@ db.usuario.aggregate([
 ])
 
 
-//agrupa por ciudad y suma edades
+// agrupa por ciudad y suma edades
 db.usuario.aggregate([
   {
     $group: {
@@ -477,7 +500,7 @@ db.usuario.aggregate([
 
 
 
-//que sean mayores 30, los agrupa por ciudad y pone suma de sus edades
+// filtra que sean mayores 30, los agrupa por ciudad y calcula suma de sus edades
 db.usuario.aggregate([
   {
     $match: {
@@ -495,7 +518,7 @@ db.usuario.aggregate([
 
 
 
-//solo mostrar estos campos
+// solo mostrar unos campos
 db.usuario.aggregate([
   {
     $project: {
@@ -507,12 +530,12 @@ db.usuario.aggregate([
   }
 ])
 
-//anadimos campos
+// añadir campos con update
 db.usuario.updateOne({ nombre: "Juan Pérez"}, { $set: { edadHijoMayor: 11 } })
 db.usuario.updateOne({ nombre: "María García"}, { $set: { edadHijoMayor: 9 } })
 db.usuario.updateOne({ nombre: "Carlos López"}, { $set: { edadHijoMayor: 9 } })
 
-//solo muestra unos campos y hace calculo
+// solo mostrar unos campos y hacer cálculo con la diferencia de edades
 db.usuario.aggregate([
   {
     $project: {
@@ -524,13 +547,17 @@ db.usuario.aggregate([
 ])
 
 
-db.usuario.countDocuments() //contar elementos
+// contar elementos
+db.usuario.countDocuments() 
+
+// cuenta con condición
+db.usuario.countDocuments({ edad: { $gte:30 } });
+
+// los que tienen en intereses viajar
+db.usuario.find({ intereses: "viajar" }) 
 
 
-db.usuario.find({ intereses: "viajar" }) //los que tienen en intereses viajar
-
-
-
+// número de amigos de cada usuario ordenado de mayor a menor
 db.usuario.aggregate([
   {
     $project: {
@@ -542,10 +569,10 @@ db.usuario.aggregate([
     $sort: { numero_amigos: -1 }
   }
 ])
-//numero de amigos de cada usuario ordenado de mayor a menor
 
 
 
+// media de la edad de los amigos de cada usuario
 db.usuario.aggregate([
   {
     $unwind: "$amigos" 
@@ -557,27 +584,28 @@ db.usuario.aggregate([
     }
   }
 ])
-//media de la edad de los amigos de cada usuario
 
 
-// unwind Desagrupa los documentos por cada amigo
+
+// unwind desagrupa los documentos por cada amigo
+// crea vaias Marías cada una con un amigo
 db.usuario.aggregate([
   {
     $unwind: "$amigos" 
   }
 ])
 
-//crea vaias Marias cada una con un amigo
 
 
-//insertar amigo
+
+// insertar amigo
 db.usuario.updateOne(
    { nombre: "Juan Pérez" }, 
    { $push: { amigos: { nombre: "Fede Gonzalez", edad: 25 } } } 
 )
 
 
-
+// cuánto se ha gastado cada usuario, desagrupa y suma precios
 db.usuario.aggregate([
   {
     $unwind: "$historial_compras" 
@@ -590,11 +618,11 @@ db.usuario.aggregate([
   }
 ])
 
-//cuanto se ha gastado cada usuario
 
 
 
-//solo el que mas ha gastado
+
+// solo mostrar el que más ha gastado
 db.usuario.aggregate([
   {
     $unwind: "$historial_compras" 
@@ -613,10 +641,10 @@ db.usuario.aggregate([
   }
 ])
 
+// usuarios que tienen de amiga a María
+db.usuario.find({ "amigos.nombre": "María García" }, { nombre: 1 }) 
 
-db.usuario.find({ "amigos.nombre": "María García" }, { nombre: 1 }) //usuarios que tienen de amiga a Maria
-
-
+// cuántas compras en total entre todos los usuarios con un precio superior a 250
 db.usuario.aggregate([
   {
     $unwind: "$historial_compras" 
@@ -631,17 +659,18 @@ db.usuario.aggregate([
   }
 ])
 
-//cuantas compras en total entre todos los usuario mayores a 250
 
 
 
-//editar nombre de una compra
+
+// busca para Juan en su historial de compras un teléfono. 
+// cambia el producto del primer elemento que encuentre
 db.usuario.updateOne(
    { nombre: "Juan Pérez", "historial_compras.producto": "Teléfono" }, 
    { $set: { "historial_compras.$.producto": "Teclado" } } 
 )
 
-
+// suma importes compras por producto
 db.usuario.aggregate([
   {
     $unwind: "$historial_compras" 
@@ -653,11 +682,10 @@ db.usuario.aggregate([
     }
   }
 ])
-//suma importes compras por tipo
+
 
 
 use baseCurso
-
 db.personas.insertMany([
     { nombre: "Juan", edad: 30, ciudad: "Madrid" },
     { nombre: "Ana", edad: 25, ciudad: "Barcelona" },
@@ -665,16 +693,22 @@ db.personas.insertMany([
 ])
 
 
-db.personas.find().pretty() // imprimir más bonito
+// imprimir con pretty
+db.personas.find().pretty() 
 
-db.personas.find().toArray() // como array
+// como array
+db.personas.find().toArray() 
 
-db.personas.find().forEach(doc => printjson(doc)) // uno a uno
+// uno a uno
+db.personas.find().forEach(doc => printjson(doc)) 
 
-db.stats() //datos de la base
+// datos de la base
+db.stats() 
 
-db.personas.stats() //datos de la colección
+// datos de la colección
+db.personas.stats() 
 
+// actualizar todos y se les ponen estos deportes
 db.personas.updateMany(
     {},  
     {
@@ -683,16 +717,16 @@ db.personas.updateMany(
         }
     }
 )
-// todos se les ponen estos deportes
 
 
-// eliminar uno
+
+// eliminar uno del array de deportes para Pedro
 db.personas.updateOne(
     { nombre: "Pedro" },
     { $pull: { deportesFavoritos: "baloncesto" } }
 )
 
-// añadir uno
+// añadir uno al array de deportes a Pedro
 db.personas.updateOne(
     { nombre: "Pedro" },
     { $push: { deportesFavoritos: "balonmano" } }
@@ -701,7 +735,7 @@ db.personas.updateOne(
 // ver resultado
 db.personas.find({ nombre: "Pedro" }).pretty()
 
-// atributo anidado
+// actualizar y poner un atributo anidado
 db.personas.updateOne(
     { nombre: "Pedro" },
     {
@@ -719,6 +753,7 @@ db.personas.find(
 ).pretty()
 
 
+// Insertar elementos, en usuario ponemos un id
 db.perfiles.insertMany([
     { usuarioId: ObjectId(), bio: "Bio de Juan", redes: ["twitter.com/juan", "linkedin.com/in/juan"] },
     { usuarioId: ObjectId(), bio: "Bio de Ana", redes: ["twitter.com/ana", "linkedin.com/in/ana"] },
@@ -726,12 +761,15 @@ db.perfiles.insertMany([
 ])
 
 
-// obtener personas y perfiles
+// obtener personas y perfiles en unas variables
 let personas = db.personas.find().toArray();
 let perfiles = db.perfiles.find().toArray();
 
+// ver resultados
+personas
 
-// en los perfiles se pone el id del usuario, relación 1 a 1 
+
+// en los perfiles se pone el id del usuario en usuarioId, relación 1 a 1 
 personas.forEach((usuario, index) => {
     db.perfiles.updateOne(
         { _id: perfiles[index]._id },
@@ -756,12 +794,14 @@ db.proyectos.insertMany([
     { nombre: "Proyecto 2", descripcion: "Descripción del proyecto 2" }
 ])
 
-// obtener ids
+
+// obtener ids solo en variables
 let usuarioIds = db.personas.find().toArray().map(user => user._id);
 usuarioIds
 let proyectoIds = db.proyectos.find().toArray().map(proj => proj._id);
 
 // asociar personas a proyectos con relación muchos a muchos
+// en array de proyectos de la persona ponemos los ids
 db.personas.updateMany(
     { nombre: "Juan" },
     { $set: { proyectos: [proyectoIds[0], proyectoIds[1]] } }
@@ -777,28 +817,50 @@ db.personas.updateMany(
     { $set: { proyectos: [proyectoIds[1]] } }
 );
 
-db.personas.updateMany(
+db.proyectos.updateMany(
     { _id: proyectoIds[0] },
     { $set: { usuarios: [usuarioIds[0], usuarioIds[1]] } }
 );
 
-db.personas.updateMany(
+db.proyectos.updateMany(
     { _id: proyectoIds[1] },
     { $set: { usuarios: [usuarioIds[0], usuarioIds[2]] } }
 );
 
 
-// consulta relación uno a uno
+// consulta relación uno a uno, buscar perfil de Pedro por su id
 db.perfiles.find({ usuarioId: db.personas.findOne({ nombre: "Pedro" })._id }).pretty()
 
-// consulta relación uno a muchos
+// consulta relación uno a muchos, todos los posts de Juan
 db.posts.find({ usuarioNombre: "Juan" }).pretty()
 
 
 // consulta relación muchos a muchos
 db.personas.find({ nombre: "Juan" }, { proyectos: 1, _id: 0 }).pretty()
 
+// relación muchos a muchos mostrar los datos
+// filtra de Juan, mira los ids de sus proyectos y los relaciona con la colección de proyectos
+db.personas.aggregate([
+    { $match: { nombre: "Juan" } },
+    {
+        $lookup: {
+            from: "proyectos",       
+            localField: "proyectos", 
+            foreignField: "_id",    
+            as: "proyectos"         
+        }
+    },
+    {
+        $project: {
+            _id: 0,
+            nombre: 1,
+            proyectos: 1
+        }
+    }
+])
+
 // lookup une los campos por la clave
+// mira en perfiles, uniendo el usuarioId con id de la persona y lo hace creando varios si tienen varios perfiles
 db.personas.aggregate([
     {
         $lookup: {
@@ -815,6 +877,7 @@ db.personas.aggregate([
 
 
 // unir elementos en relación uno a muchos
+// mira en posts y el usuarioNombre con el nombre de la persona. Localfield en personas y foreign en posts
 db.personas.aggregate([
     {
         $lookup: {
@@ -828,6 +891,7 @@ db.personas.aggregate([
 
 
 // unirlo en relación muchos a muchos
+// para las personas busca los ids de sus proyectos y los enlaza. Personas tiene campo proyectos y proyecto campo _id
 db.personas.aggregate([
     {
         $lookup: {
@@ -840,7 +904,7 @@ db.personas.aggregate([
 ]).pretty()
 
 
-// establecer validaciones
+// establecer validaciones al crear elementos
 db.createCollection("usuarios", {
     validator: {
         $jsonSchema: {
@@ -872,7 +936,7 @@ db.createCollection("usuarios", {
 })
 
 
-// error en la validación
+// error en la validación al insertar elemento
 db.usuarios.insertMany([
     { _id: ObjectId("64a7b2d5c2e1a4b5c3e1a4b5"), nombre: "Juan", edad: 30, ciudad: "Madrid", correo:"sdaa" },
     { _id: ObjectId("64a7b2d5c2e1a4b5c3e1a4b6"), nombre: "Ana", edad: 25, ciudad: "Barcelona" },
@@ -882,6 +946,8 @@ db.usuarios.insertMany([
 
 
 // editar validación, correo tambien required
+// strict rechazará cualquier operación de inserción o actualización que no cumpla con el esquema definido
+// moderate aplica las reglas de validación solo a los documentos insertados y a los documentos existentes que se están actualizando
 db.runCommand({
     collMod: "usuarios",
     validator: {
@@ -916,13 +982,14 @@ db.runCommand({
 
 // error en la validación
 db.usuarios.insertMany([
-    { _id: ObjectId("64a7b2d5c2e1a4b5c3e1a4b5"), nombre: "Juan", edad: 30, ciudad: "Madrid" },
-    { _id: ObjectId("64a7b2d5c2e1a4b5c3e1a4b6"), nombre: "Ana", edad: 25, ciudad: "Barcelona" },
-    { _id: ObjectId("64a7b2d5c2e1a4b5c3e1a4b7"), nombre: "Pedro", edad: 35, ciudad: "Valencia" }
+    { _id: ObjectId("64a7b2d5c2e1a4b5c3e1a4b5"), nombre: "Juan", edad: 130, ciudad: "Madrid" , correo: "chema@gmail.com"}
 ])
 
+
 // comandos administrativos con runCommand
+// obtener un informe detallado sobre el estado actual del servidor de MongoDB
 db.runCommand({ serverStatus: 1 })
+// para validar la integridad de los documentos en una colección específica
 db.runCommand({ validate: "usuarios" })
 
 
@@ -935,8 +1002,7 @@ mongod --logpath /var/log/mongodb/mongod.log
 // indicar a MongoDB que debe ejecutarse en segundo plano
 mongod --dbpath /var/lib/mongodb --logpath /var/log/mongodb/mongod.log --fork
 
-// especificar el nivel de reconocimiento que debe recibir un cliente al escribir datos en MongoDB. Define cuántos nodos deben confirmar la escritura antes de considerarla exitosa.
-
+// writeConcern sirve para especificar el nivel de reconocimiento que debe recibir un cliente al escribir datos en MongoDB. Define cuántos nodos deben confirmar la escritura antes de considerarla exitosa.
 
 // operación de inserción se considerará exitosa solo si la mayoría de los nodos confirman la escritura y se ha confirmado en el journal
 db.personas.insertOne(
@@ -944,6 +1010,8 @@ db.personas.insertOne(
     { writeConcern: { w: "majority", j: true } }
 )
 
+// w 1 solo el nodo primario, w majority la mayoría, w 0 no se requiere confirmación, w N un número específico
+// j true espera que la operación se registre en el journal, false no espera
 
 // iniciar mongo con un archivo de configuracion
 mongod -f /etc/mongod.conf
@@ -996,12 +1064,13 @@ db.personas.insertMany([
 ])
 
 
-// solo ciudad de la dirección
+// ver solo ciudad de la dirección
 db.personas.find({}, { "direccion.ciudad": 1, _id: 0 }).pretty()
 
 
 
 // solo números de teléfonos móvil
+// desagrupo por teléfonos, filtro los móviles y muestro el número
 db.personas.aggregate([
     { $unwind: "$telefonos" },
     { $match: { "telefonos.tipo": "movil" } },
@@ -1016,11 +1085,11 @@ db.personas.find({ aficiones: "pintar" }, { nombre: 1, _id: 0 }).pretty()
 // campo de la ciudad informado y no nulo
 db.personas.find({ "direccion.ciudad": { $exists: true, $ne: null } }).pretty()
 
-// que el campo sea string
+// filtrar elementos que el campo sea string
 db.personas.find({ "direccion.ciudad": { $type: "string" } }).pretty()
 
 
-// campo que dice si es adulto
+// campo que dice si es adulto, comprueba la edad
 db.personas.aggregate([
     {
         $project: {
@@ -1043,13 +1112,15 @@ db.personas.aggregate([
     }
 ]).pretty()
 
+
 // personas con 3 aficiones
 db.personas.find({ aficiones: { $size: 3 } }).pretty()
 
-// personas con estas aficiones
+// personas con estas aficiones concretas
 db.personas.find({ aficiones: { $all: ["fútbol", "leer"] } }).pretty()
 
-// buscar que al menos un elemento del array tenga eso
+// buscar que al menos un elemento del array de telefonos tenga eso
+// encontrar documentos donde al menos un subdocumento dentro de un array coincide con las condiciones dadas
 db.personas.find({ telefonos: { $elemMatch: { tipo: "movil", numero: "987654321" } } }).pretty()
 
 // incorporar el atributo esadulto
@@ -1058,81 +1129,86 @@ db.personas.updateMany(
     { $set: { esAdulto: true } }
 )
 
-// omitir dos primeros
+// omitir dos primeros al mostrar
 db.personas.find().skip(2).pretty()
 
 
-// dos primeros telefonos de cada persona
-db.personas.find({}, { nombre: 1, telefonos: { $slice: 2 }, _id: 0 }).pretty()
+// primer teléfono de cada persona
+db.personas.find({}, { nombre: 1, telefonos: { $slice: 1 }, _id: 0 }).pretty()
 
 
-// actualizar primer elemento que coincida
+// actualizar primer teléfono que sea móvil
 db.personas.updateOne(
-    { "telefonos.tipo": "movil" },
+    { nombre: "Juan", "telefonos.tipo": "movil" },
     { $set: { "telefonos.$.numero": "999999999" } }
 )
 
 // incrementar en todos la edad en 1
 db.personas.updateMany({}, { $inc: { edad: 1 } })
 
-
-// si menos 18, se pone a 18
+// actualizar edad de Juan
 db.personas.updateOne(
-    { nombre: "Laura" },
-    { $min: { edad: 18 } }
+    { nombre: "Juan" }, 
+    { $set: { edad: 17 } } 
 )
 
-// si más 30, se pone a 30
+// cambia la edad a 16 porque 17 es mayor
 db.personas.updateOne(
-    { nombre: "Ana" },
+    { nombre: "Juan" }, 
+    { $min: { edad: 16 } } 
+);
+
+// cambia la edad a 30 porque 16 es menor
+db.personas.updateOne(
+    { nombre: "Juan" },
     { $max: { edad: 30 } }
 )
 
 // multiplica edad por 2
 db.personas.updateOne(
-    { nombre: "Pedro" },
+    { nombre: "Juan" },
     { $mul: { edad: 2 } }
 )
 
 // eliminar campo
 db.personas.updateOne(
     { nombre: "Juan" },
-    { $unset: { direccion: "" } }
+    { $unset: { ciudad: "" } }
 )
 
 
 // renombrar atributo
 db.personas.updateOne(
-    { nombre: "Ana" },
+    { nombre: "Juan" },
     { $rename: { "deportesFavoritos": "hobbies" } }
 )
 
 
 
-// actualizar primer móvil de ana
+// actualizar primer móvil de Ana
 db.personas.updateOne(
     { nombre: "Ana", "telefonos.tipo": "movil" },
-    { $set: { "telefonos.$.numero": "555555555" } }
+    { $set: { "telefonos.$.numero": "555555556" } }
 )
 
 
-// añadir elementos array
+// añadir elementos array de hobbies
 db.personas.updateOne(
     { nombre: "Juan" },
-    { $push: { deportesFavoritos: { $each: ["tenis", "natación", "ciclismo"] } } }
+    { $push: { hobbies: { $each: ["tenis", "natación", "ciclismo"] } } }
 )
 
 // eliminar elemento array
 db.personas.updateOne(
     { nombre: "Juan" },
-    { $pull: { deportesFavoritos: "tenis" } }
+    { $pull: { hobbies: "tenis" } }
 )
 
 
 // eliminar último
 db.personas.updateOne(
     { nombre: "Juan" },
-    { $pop: { deportesFavoritos: 1 } }
+    { $pop: { hobbies: 1 } }
 )
 
 
@@ -1178,46 +1254,47 @@ db.personas1.updateMany(
 // actualizar el número de teléfono móvil del primer elemento del array telefonos que tenga tipo "movil" para Ana
 db.personas1.updateOne(
     { nombre: "Ana" },
-    { $set: { "telefonos.$[elem].numero": "555555555" } },
+    { $set: { "telefonos.$[elem].numero": "555555556" } },
     { arrayFilters: [{ "elem.tipo": "movil" }] }
 )
 
-// agrega elemento si no esta
-db.personas.updateOne(
+// agrega elemento si no está
+db.personas1.updateOne(
     { nombre: "Juan" },
-    { $addToSet: { deportes: "natación sinc" } }
+    { $addToSet: { deportes: "natación" } }
 )
 
 // analizar consultas
-db.personas.find({ nombre: "Juan" }).explain()
+db.personas1.find({ nombre: "Juan" }).explain()
 
 
-// indice compuesto
-db.personas.createIndex({ nombre: 1, edad: 1 })
+// índice compuesto
+db.personas1.createIndex({ nombre: 1, edad: 1 })
 
 // índice en el campo edad solo para los documentos donde edad sea mayor que 25
-db.personas.createIndex(
+db.personas1.createIndex(
     { edad: 1 },
     { partialFilterExpression: { edad: { $gt: 25 } } }
 )
 
-db.personas.getIndexes()
-// utiliza el índice edad con partialFilterExpression para optimizar las consultas
-db.personas.find({ edad: { $gt: 25 } }).explain("executionStats")
+db.personas1.getIndexes()
+// se utiliza el índice edad con partialFilterExpression para optimizar las consultas
+db.personas1.find({ edad: { $gt: 25 } }).explain("executionStats")
 
-// agregar campo
-db.personas.updateMany(
+// agregar campo con fecha actual
+db.personas1.updateMany(
     {}, 
     { $set: { fechaExpiracion: new Date() } }
 )
 
-// los documentos se eliminarán automáticamente después de 1 hora de su fecha de expiración
-db.personas.createIndex(
+// los documentos se eliminarán automáticamente después de 1 hora de su campo fecha de expiración
+db.personas1.createIndex(
     { fechaExpiracion: 1 },
     { expireAfterSeconds: 3600 } 
 )
 
 
+// insertar artículos
 db.articulos.insertMany([
     {
         titulo: "Cómo optimizar consultas en MongoDB",
@@ -1241,16 +1318,18 @@ db.articulos.insertMany([
 db.articulos.createIndex({ titulo: "text", contenido: "text" })
 
 
-// búsqueda de artículos que contienen las palabras "base de datos"
-db.articulos.find({ $text: { $search: "base de datos" } })
+// búsqueda de artículos que contienen las palabras "datos"
+db.articulos.find({ $text: { $search: "datos" } })
 
 // proyectar los resultados de una búsqueda de texto y obtener metadatos relevantes, como la puntuación de relevancia (textScore).
+// se calcula automáticamente un puntaje de relevancia para cada documento que coincide con los términos de búsqueda
 db.articulos.find(
-    { $text: { $search: "base de datos" } },
+    { $text: { $search: "datos" } },
     { score: { $meta: "textScore" } }
 )
 
 db.articulos.getIndexes()
+// eliminar índice
 db.articulos.dropIndex("titulo_text_contenido_text")
 
 
@@ -1263,12 +1342,20 @@ db.articulos.createIndex(
     }
 )
 
-//localizaciones
+db.articulos.find(
+    { $text: { $search: "datos" } },
+    { score: { $meta: "textScore" } }
+)
+
+
+
+// localizaciones
+// crear índice
 db.localizaciones.createIndex({ ubicacion: "2dsphere" })
 db.localizaciones.insertMany([
     {
         nombre: "Oficina Central",
-        ubicacion: { type: "Point", coordinates: [ -73.9749, 40.7736 ] }  // Longitud, Latitud
+        ubicacion: { type: "Point", coordinates: [ -73.9749, 40.7736 ] }  
     },
     {
         nombre: "Tienda A",
@@ -1351,6 +1438,7 @@ db.localizaciones.find({
 })
 
 
+// nsertar personas y actuazliar
 db.personas.insertMany([
     { nombre: "Juan" },
     { nombre: "Ana" },
@@ -1373,7 +1461,7 @@ db.personas.updateOne(
 )
 
 
-// concatenar 
+// concatenar nombre y apellido
 db.personas.aggregate([
     {
         $project: {
@@ -1405,7 +1493,7 @@ db.localizaciones.insertMany([
 ])
 
 
-// separa coordenadas por comas y las convierte
+// separa coordenadas por comas y las convierte a double
 db.localizaciones.aggregate([
     {
         $project: {
@@ -1466,7 +1554,7 @@ db.pedidos.insertMany([
 ])
 
 
-// agrega elementos a un set eliminando duplicados
+// descompone y agrega elementos a un set eliminando duplicados
 db.pedidos.aggregate([
     { $unwind: "$productos" },
     { $group: {
@@ -1511,7 +1599,7 @@ db.pedidos.aggregate([
     }
 ])
 
-
+// insertar con isodate
 db.ventas.insertMany([
     { producto: "Producto A", cantidad: 5, fecha: ISODate("2024-01-01T00:00:00Z") },
     { producto: "Producto B", cantidad: 15, fecha: ISODate("2024-02-01T00:00:00Z") },
@@ -1543,7 +1631,7 @@ db.empleados.insertMany([
 ])
 
 
-// escribe los resultados en una nueva colección
+// escribe los resultados en una nueva colección mutliplicando los salarios por 12
 db.empleados.aggregate([
     {
         $project: {
@@ -1560,7 +1648,7 @@ db.empleados.aggregate([
 const puntoReferencia = { type: "Point", coordinates: [ -73.96, 40.76 ] };
 
 
-// ubicaciones cercanas al punto de referencia
+// ubicaciones cercanas al punto de referencia, en un radio de 5000m
 db.localizaciones.aggregate([
     {
         $geoNear: {
@@ -1582,7 +1670,7 @@ db.productosInc.insertMany([
     { nombre: "Producto C", amount: 30, valuation: 300 }
 ])
 
-// incrementar a la vez
+// incrementar a la vez dos campos
 db.productosInc.updateMany(
     {},
     { $inc: { amount: 10, valuation: 100 } }
@@ -1655,6 +1743,7 @@ db.persons.aggregate([
 
 
 // crea el nombre completo poniendo primera letra a mayúscula
+// substrCP coge el resto de la cadena hasta el final
 db.persons.aggregate([
     {
       $project: {
@@ -1824,7 +1913,7 @@ db.persons.aggregate([
 
 
  // crear colección con validaciones 
-  db.createCollection('posts', {
+  db.createCollection('posts1', {
     validator: {
       $jsonSchema: {
         bsonType: 'object',
@@ -1869,7 +1958,7 @@ db.persons.aggregate([
 
 // cambiar validaciones
   db.runCommand({
-    collMod: 'posts',
+    collMod: 'posts1',
     validator: {
       $jsonSchema: {
         bsonType: 'object',
@@ -1911,10 +2000,11 @@ db.persons.aggregate([
     validationAction: 'warn'
   });
   
-// permite que los documentos que no cumplen con las reglas de validación sean aceptados, pero advierte sobre estas violaciones
+// warn permite que los documentos que no cumplen con las reglas de validación sean aceptados, pero advierte sobre estas violaciones
+// error si un documento no cumple con las reglas de validación, rechazará la operación de inserción o actualización y lanzará un error.
 
 
-// cuenta agrupando por buckets y muestra su media
+// cuenta agrupando por buckets y muestra su media de edad y el número de personas
 db.persons.aggregate([
   {
     $bucket: {
@@ -1943,7 +2033,7 @@ db.persons.aggregate([
     }
   ]).pretty();
 
-// hombres, concatenando nombre completo con la fecha de nacimiento
+// hombres, concatenando nombre completo con la fecha de nacimiento, ordenando por esa fecha y saltanto 10 y limitando
   db.persons.aggregate([
     { $match: { gender: "male" } },
     { $project: { _id: 0, gender: 1, name: { $concat: ["$name.first", " ", "$name.last"] }, birthdate: { $toDate: "$dob.date" } } },
@@ -1953,7 +2043,7 @@ db.persons.aggregate([
   ]).pretty();
 
 
-// guardando resultados
+// guardando resultados en otra colección
   db.persons.aggregate([
     {
       $project: {
@@ -2071,21 +2161,21 @@ db.friends.insertMany([
 ]);
 
 
-// agrupa hobbies por edad
+// agrupa hobbies por edad, para tal edad, hay estos hobbies
   db.friends.aggregate([
     { $unwind: "$hobbies" }, 
     { $group: { _id: { age: "$age" }, allHobbies: { $push: "$hobbies" } } }
   ]).pretty();
 
 
-// sin repetir
+// ahora sin repetir
 db.friends.aggregate([
     { $unwind: "$hobbies" }, 
     { $group: { _id: { age: "$age" }, allHobbies: { $addToSet: "$hobbies" } } }
   ]).pretty();
 
 
-// coge el elemento 2 solo
+// coge el elemento 2 solo. Parte del 2 y solo coge 1
 db.friends.aggregate([
     { $project: { _id: 0, examScore: { $slice: ["$examScores", 2, 1] } } }
   ]).pretty();
@@ -2098,7 +2188,7 @@ db.friends.aggregate([
 
 
 
-// filtra para cada uno los scores mayores a 90
+// filtra para cada array, cada uno los scores mayores a 90
 db.friends.aggregate([
   {
     $project: {
